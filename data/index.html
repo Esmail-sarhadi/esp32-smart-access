@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Access Control</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen flex items-center justify-center px-4">
+        <div class="max-w-md w-full space-y-8 bg-white p-6 rounded-xl shadow-lg">
+            <!-- Login Form -->
+            <div id="loginForm" class="space-y-6">
+                <div class="text-center">
+                    <i class="fas fa-lock text-5xl text-blue-500"></i>
+                    <h2 class="mt-6 text-3xl font-extrabold text-gray-900">Access Control</h2>
+                </div>
+                <div class="rounded-md shadow-sm -space-y-px">
+                    <div>
+                        <input id="accessCode" name="code" type="password" required 
+                               class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" 
+                               placeholder="Enter Access Code">
+                    </div>
+                </div>
+                <div>
+                    <button onclick="authenticate()" 
+                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-key mr-2"></i>
+                        Verify Access
+                    </button>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div id="controlPanel" class="space-y-6 hidden">
+                <div class="text-center">
+                    <i class="fas fa-home text-5xl text-blue-500"></i>
+                    <h2 class="mt-6 text-3xl font-extrabold text-gray-900">Door Control</h2>
+                </div>
+                <div class="flex justify-center">
+                    <button id="doorToggle" onclick="toggleDoor()" 
+                            class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <i class="fas fa-lock mr-2"></i>
+                        <span>Door Locked</span>
+                    </button>
+                </div>
+                <div id="status" class="text-center text-sm text-gray-500">
+                    System Status: <span class="font-semibold">Ready</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isLocked = true;
+
+        async function authenticate() {
+            const code = document.getElementById('accessCode').value;
+            try {
+                const response = await fetch('/auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code })
+                });
+
+                if (response.ok) {
+                    document.getElementById('loginForm').classList.add('hidden');
+                    document.getElementById('controlPanel').classList.remove('hidden');
+                } else {
+                    alert('Invalid access code');
+                }
+            } catch (error) {
+                alert('Connection error');
+            }
+        }
+
+        async function toggleDoor() {
+            try {
+                const response = await fetch('/toggle', {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    const state = await response.text();
+                    isLocked = state === 'locked';
+                    updateDoorButton();
+                }
+            } catch (error) {
+                alert('Connection error');
+            }
+        }
+
+        function updateDoorButton() {
+            const button = document.getElementById('doorToggle');
+            const icon = button.querySelector('i');
+            const text = button.querySelector('span');
+
+            if (isLocked) {
+                button.classList.remove('bg-green-600', 'hover:bg-green-700');
+                button.classList.add('bg-red-600', 'hover:bg-red-700');
+                icon.classList.remove('fa-lock-open');
+                icon.classList.add('fa-lock');
+                text.textContent = 'Door Locked';
+            } else {
+                button.classList.remove('bg-red-600', 'hover:bg-red-700');
+                button.classList.add('bg-green-600', 'hover:bg-green-700');
+                icon.classList.remove('fa-lock');
+                icon.classList.add('fa-lock-open');
+                text.textContent = 'Door Unlocked';
+            }
+        }
+    </script>
+</body>
+</html>
+
